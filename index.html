@@ -38,6 +38,13 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
 .logo-sub { font-size: 11px; color: rgba(255,255,255,0.75); letter-spacing: 0.06em; text-transform: uppercase; margin-top: 6px; }
 .sidebar-section { padding: 18px 14px 6px; }
 .sidebar-label { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(255,255,255,0.3); padding: 0 8px; margin-bottom: 6px; }
+.sidebar-collapsible-header { display: flex; align-items: center; justify-content: space-between; cursor: pointer; padding: 0 8px; margin-bottom: 6px; user-select: none; }
+.sidebar-collapsible-header:hover .sidebar-label { color: rgba(255,255,255,0.6); }
+.sidebar-collapsible-header .sidebar-label { margin-bottom: 0; }
+.sidebar-collapse-arrow { font-size: 9px; color: rgba(255,255,255,0.3); transition: transform 0.2s; }
+.sidebar-collapsible-header.collapsed .sidebar-collapse-arrow { transform: rotate(-90deg); }
+.sidebar-collapsible-body { overflow: hidden; transition: max-height 0.25s ease, opacity 0.2s; max-height: 600px; opacity: 1; }
+.sidebar-collapsible-body.collapsed { max-height: 0; opacity: 0; }
 .nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: var(--radius-sm); cursor: pointer; font-size: 13.5px; color: rgba(255,255,255,0.6); transition: background 0.15s, color 0.15s; margin-bottom: 2px; font-family: var(--font); }
 .nav-item:hover { background: rgba(255,255,255,0.08); color: #fff; }
 .nav-item.active { background: var(--green); color: #fff; }
@@ -246,15 +253,27 @@ textarea.input-field { width: 100%; min-height: 75px; resize: vertical; }
       <div class="nav-item" onclick="showView('allTasks')" id="nav-allTasks">&#9643; Tareas <span class="nav-count" id="task-count-nav">0</span></div>
     </div>
   <div class="sidebar-section">
-    <div class="sidebar-label">Áreas</div>
-    <div id="sidebar-areas-list"></div>
-    <button class="btn-new-proj" onclick="openNewAreaModal()">+ Nueva área</button>
+    <div class="sidebar-collapsible-header" onclick="toggleSidebarSection('areas-body',this)">
+      <div class="sidebar-label">Áreas</div>
+      <span class="sidebar-collapse-arrow">▼</span>
+    </div>
+    <div class="sidebar-collapsible-body" id="areas-body">
+      <div id="sidebar-areas-list"></div>
+      <button class="btn-new-proj" onclick="openNewAreaModal()">+ Nueva área</button>
+    </div>
   </div>
   <div class="sidebar-projects">
-    <div class="sidebar-section"><div class="sidebar-label">Proyectos</div></div>
-    <div id="sidebar-proj-list"></div>
-    <div style="padding:0 14px 18px;">
-      <button class="btn-new-proj" onclick="openNewProjectModal()">+ Nuevo proyecto</button>
+    <div class="sidebar-section">
+      <div class="sidebar-collapsible-header" onclick="toggleSidebarSection('projects-body',this)">
+        <div class="sidebar-label">Proyectos</div>
+        <span class="sidebar-collapse-arrow">▼</span>
+      </div>
+    </div>
+    <div class="sidebar-collapsible-body" id="projects-body">
+      <div id="sidebar-proj-list"></div>
+      <div style="padding:0 14px 18px;">
+        <button class="btn-new-proj" onclick="openNewProjectModal()">+ Nuevo proyecto</button>
+      </div>
     </div>
   </div>
   </aside>
@@ -571,6 +590,13 @@ async function addActivity(text, color) {
 }
 
 // ── NAVIGATION ──
+window.toggleSidebarSection = function(bodyId, header) {
+  const body = document.getElementById(bodyId);
+  if(!body) return;
+  const collapsed = body.classList.toggle("collapsed");
+  header.classList.toggle("collapsed", collapsed);
+};
+
 window.showView = function(view, projId) {
   currentView = view;
   document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));
