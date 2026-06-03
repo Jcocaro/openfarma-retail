@@ -488,32 +488,16 @@ function initAuth() {
   setTimeout(()=>document.getElementById("login-name").focus(),100);
 }
 
-window.doLogin = async function() {
+window.doLogin = function() {
   const name=document.getElementById("login-name").value.trim();
   const pin=document.getElementById("login-pin").value.trim();
   const err=document.getElementById("login-error");
   if(!name){err.textContent="Por favor ingresa tu nombre.";return;}
-  if(!pin){err.textContent="Por favor ingresa tu PIN.";return;}
+  if(pin!==TEAM_PIN){err.textContent="PIN incorrecto.";document.getElementById("login-pin").value="";document.getElementById("login-pin").focus();return;}
   err.textContent="";
-  document.getElementById("login-loading").textContent="Verificando...";
-  try {
-    const {getDocs,where}=await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
-    const q=query(collection(db,"users"),where("name","==",name));
-    const snap=await getDocs(q);
-    if(snap.empty){
-      if(pin!==TEAM_PIN){document.getElementById("login-loading").textContent="";err.textContent="PIN incorrecto.";document.getElementById("login-pin").value="";return;}
-      const ref=doc(collection(db,"users"));
-      await setDoc(ref,{name,pin,initials:name.split(" ").map(w=>w[0]).join("").toUpperCase().substr(0,2),createdAt:new Date().toISOString()});
-      currentUser={name,initials:name.split(" ").map(w=>w[0]).join("").toUpperCase().substr(0,2)};
-    } else {
-      const userData=snap.docs[0].data();
-      if(userData.pin!==pin){document.getElementById("login-loading").textContent="";err.textContent="PIN incorrecto.";document.getElementById("login-pin").value="";return;}
-      currentUser={name,initials:userData.initials||name.split(" ").map(w=>w[0]).join("").toUpperCase().substr(0,2)};
-    }
-    document.getElementById("login-loading").textContent="";
-    sessionStorage.setItem("of_user",JSON.stringify(currentUser));
-    showApp();
-  } catch(e){document.getElementById("login-loading").textContent="";err.textContent="Error al conectar. Intentá de nuevo.";console.error(e);}
+  currentUser={name,initials:name.split(" ").map(w=>w[0]).join("").toUpperCase().substr(0,2)};
+  sessionStorage.setItem("of_user",JSON.stringify(currentUser));
+  showApp();
 };
 
 window.doLogout = function() {
