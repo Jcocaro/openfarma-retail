@@ -32,7 +32,7 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
 
 /* APP */
 .app { display: flex; min-height: 100vh; }
-.sidebar { width: 250px; min-width: 250px; background: var(--sidebar-bg); display: flex; flex-direction: column; position: fixed; top: 0; left: 0; bottom: 0; z-index: 100; overflow-y: auto; }
+.sidebar { width: 250px; min-width: 250px; background: var(--sidebar-bg); display: flex; flex-direction: column; position: fixed; top: 0; left: 0; bottom: 0; z-index: 100; overflow-y: auto; overflow-x: hidden; }
 .sidebar-header { background: var(--green); padding: 20px 20px 18px; }
 .logo-img { width: 160px; display: block; filter: brightness(0) invert(1); }
 .logo-sub { font-size: 11px; color: rgba(255,255,255,0.75); letter-spacing: 0.06em; text-transform: uppercase; margin-top: 6px; }
@@ -210,6 +210,10 @@ textarea.input-field { width: 100%; min-height: 75px; resize: vertical; }
 /* DRIVE LINK */
 .drive-link-btn { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; color: #1a73e8; text-decoration: none; padding: 3px 10px; border: 1px solid #c5d8f8; border-radius: 20px; background: #e8f0fe; transition: background 0.15s; }
 .drive-link-btn:hover { background: #d2e3fc; }
+.area-detail-banner { padding: 18px 22px; border-radius: var(--radius); margin-bottom: 6px; display: flex; align-items: center; gap: 16px; }
+.area-detail-banner-name { font-size: 22px; font-weight: 700; color: #fff; }
+.area-detail-banner-stats { font-size: 13px; color: rgba(255,255,255,0.8); }
+.task-check.inprogress { background: #FFF3CD; border-color: #B8860B; color: #B8860B; }
 </style>
 </head>
 <body>
@@ -271,18 +275,22 @@ textarea.input-field { width: 100%; min-height: 75px; resize: vertical; }
       <!-- DASHBOARD -->
       <div class="view active" id="view-dashboard">
         <div class="areas-grid" id="areas-grid"></div>
-        <div class="section-row" style="margin-bottom:14px;">
-          <div class="section-title">Todos los proyectos</div>
-          <button class="btn btn-ghost" style="font-size:12px;" onclick="showView('allProjects')">Ver todos</button>
-        </div>
-        <div class="projects-grid" id="dash-projects-grid" style="margin-bottom:24px;"></div>
-        <div class="section-title" style="margin-bottom:12px;"><span class="sync-dot"></span>Actividad reciente</div>
-        <div class="activity-list" id="activity-list"></div>
       </div>
 
       <!-- ALL PROJECTS -->
       <div class="view" id="view-allProjects">
         <div class="projects-grid" id="all-projects-grid"></div>
+      </div>
+
+      <!-- AREA DETAIL -->
+      <div class="view" id="view-areaDetail">
+        <button class="back-btn" onclick="showView('dashboard')">&larr; Volver</button>
+        <div id="area-detail-header" style="margin-bottom:20px;"></div>
+        <div class="section-row" style="margin-bottom:14px;">
+          <div class="section-title">Proyectos</div>
+          <button class="btn btn-primary" style="font-size:12px;" onclick="openNewProjectModal()">+ Nuevo proyecto</button>
+        </div>
+        <div class="projects-grid" id="area-projects-grid"></div>
       </div>
 
       <!-- ALL TASKS -->
@@ -304,6 +312,16 @@ textarea.input-field { width: 100%; min-height: 75px; resize: vertical; }
           </div>
         </div>
         <div id="tab-tasks">
+          <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center;">
+            <input class="input-field" id="task-filter-input" placeholder="🔍 Buscar tarea..." style="flex:1;min-width:160px;" oninput="filterTasks()">
+            <select class="input-field" id="task-sort-select" style="max-width:160px;" onchange="filterTasks()">
+              <option value="default">Orden original</option>
+              <option value="date">Por fecha</option>
+              <option value="priority">Por prioridad</option>
+              <option value="person">Por responsable</option>
+              <option value="status">Por estado</option>
+            </select>
+          </div>
           <div class="task-list" id="project-tasks-list"></div>
           <div class="add-item-row" style="margin-top:14px;">
             <input class="input-field" id="new-task-input" placeholder="Nueva tarea..." onkeydown="if(event.key==='Enter')addTask()">
@@ -315,6 +333,10 @@ textarea.input-field { width: 100%; min-height: 75px; resize: vertical; }
               <option value="baja">Baja</option>
             </select>
             <button class="btn btn-primary" onclick="addTask()">Agregar</button>
+          </div>
+          <div style="margin-top:24px;border-top:1px solid var(--border);padding-top:18px;">
+            <div class="section-title" style="margin-bottom:10px;"><span class="sync-dot"></span>Actividad del proyecto</div>
+            <div class="activity-list" id="project-activity-list"></div>
           </div>
         </div>
       </div>
@@ -372,6 +394,10 @@ textarea.input-field { width: 100%; min-height: 75px; resize: vertical; }
         <div class="task-detail-label">Fecha</div>
         <input type="date" class="input-field" id="td-date" style="width:auto;font-size:13px;" onchange="updateTaskDateFromPanel(this.value)">
       </div>
+      <div class="task-detail-field" id="td-date-history-container">
+        <div class="task-detail-label">Historial de fechas (últ. 3)</div>
+        <div id="td-date-history" style="display:flex;flex-direction:column;gap:4px;"></div>
+      </div>
       <div class="task-detail-field">
         <div class="task-detail-label">Prioridad</div>
         <div class="task-detail-value" id="td-prio"></div>
@@ -381,10 +407,10 @@ textarea.input-field { width: 100%; min-height: 75px; resize: vertical; }
         <div class="task-detail-value" id="td-status"></div>
       </div>
       <div class="task-notes-section">
-        <div class="task-notes-title">📋 Notas</div>
+        <div class="task-notes-title">💬 Comentarios</div>
         <div id="td-notes-list"></div>
         <div class="task-notes-add" style="margin-top:10px;">
-          <input class="input-field" id="td-note-input" placeholder="Agregar nota..." style="font-size:13px;" onkeydown="if(event.key==='Enter')addTaskNoteFromPanel()">
+          <input class="input-field" id="td-note-input" placeholder="Escribir comentario..." style="font-size:13px;" onkeydown="if(event.key==='Enter')addTaskNoteFromPanel()">
           <button class="btn btn-primary" style="padding:6px 14px;font-size:13px;border-radius:var(--radius-sm);" onclick="addTaskNoteFromPanel()">+</button>
         </div>
       </div>
@@ -411,7 +437,13 @@ const db = getFirestore(app);
 
 // ── CONSTANTS ──
 const TEAM_PIN = "1234";
-const COLORS = ["#00C22B","#009E22","#2A4A7F","#8B4E9E","#B8860B","#4A7C8E","#CC2222","#5C7A3E"];
+const COLORS = [
+  "#00C22B","#009E22","#5C7A3E","#2ECC71","#1ABC9C",
+  "#2A4A7F","#3498DB","#4A7C8E","#1A6B8A",
+  "#8B4E9E","#9B59B6","#E91E8C","#E74C3C","#CC2222",
+  "#B8860B","#F39C12","#E67E22","#D35400",
+  "#795548","#607D8B","#455A64","#888888"
+];
 
 // ── STATE ──
 let currentUser = null;
@@ -429,6 +461,7 @@ let editingAreaId = null;
 let selectedAreaColor = COLORS[0];
 let unsubAreas = null;
 let currentTaskDetail = null;
+let currentAreaId = null;
 
 // ── UTILS ──
 function uid() { return Math.random().toString(36).substr(2,9); }
@@ -455,16 +488,32 @@ function initAuth() {
   setTimeout(()=>document.getElementById("login-name").focus(),100);
 }
 
-window.doLogin = function() {
-  const name = document.getElementById("login-name").value.trim();
-  const pin  = document.getElementById("login-pin").value.trim();
-  const err  = document.getElementById("login-error");
-  if (!name) { err.textContent="Por favor ingresa tu nombre."; return; }
-  if (pin !== TEAM_PIN) { err.textContent="PIN incorrecto."; document.getElementById("login-pin").value=""; document.getElementById("login-pin").focus(); return; }
+window.doLogin = async function() {
+  const name=document.getElementById("login-name").value.trim();
+  const pin=document.getElementById("login-pin").value.trim();
+  const err=document.getElementById("login-error");
+  if(!name){err.textContent="Por favor ingresa tu nombre.";return;}
+  if(!pin){err.textContent="Por favor ingresa tu PIN.";return;}
   err.textContent="";
-  currentUser = { name, initials: name.split(" ").map(w=>w[0]).join("").toUpperCase().substr(0,2) };
-  sessionStorage.setItem("of_user", JSON.stringify(currentUser));
-  showApp();
+  document.getElementById("login-loading").textContent="Verificando...";
+  try {
+    const {getDocs,where}=await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+    const q=query(collection(db,"users"),where("name","==",name));
+    const snap=await getDocs(q);
+    if(snap.empty){
+      if(pin!==TEAM_PIN){document.getElementById("login-loading").textContent="";err.textContent="PIN incorrecto.";document.getElementById("login-pin").value="";return;}
+      const ref=doc(collection(db,"users"));
+      await setDoc(ref,{name,pin,initials:name.split(" ").map(w=>w[0]).join("").toUpperCase().substr(0,2),createdAt:new Date().toISOString()});
+      currentUser={name,initials:name.split(" ").map(w=>w[0]).join("").toUpperCase().substr(0,2)};
+    } else {
+      const userData=snap.docs[0].data();
+      if(userData.pin!==pin){document.getElementById("login-loading").textContent="";err.textContent="PIN incorrecto.";document.getElementById("login-pin").value="";return;}
+      currentUser={name,initials:userData.initials||name.split(" ").map(w=>w[0]).join("").toUpperCase().substr(0,2)};
+    }
+    document.getElementById("login-loading").textContent="";
+    sessionStorage.setItem("of_user",JSON.stringify(currentUser));
+    showApp();
+  } catch(e){document.getElementById("login-loading").textContent="";err.textContent="Error al conectar. Intentá de nuevo.";console.error(e);}
 };
 
 window.doLogout = function() {
@@ -521,6 +570,7 @@ function refreshUI() {
   else if(currentView==="allProjects") renderAllProjects();
   else if(currentView==="allTasks") renderAllTasks();
   else if(currentView==="projectDetail" && currentProjectId) renderProjectDetail(currentProjectId);
+  else if(currentView==="areaDetail" && currentAreaId) renderAreaDetail(currentAreaId);
   if(currentTaskDetail) {
     const {taskId,projId}=currentTaskDetail;
     const p=projects[projId];
@@ -560,8 +610,51 @@ window.showView = function(view, projId) {
 
 window.topbarAction = function() {
   if(currentView==="dashboard"||currentView==="allProjects") openNewProjectModal();
+  else if(currentView==="areaDetail") openNewProjectModal();
   else if(currentView==="projectDetail") { switchTab("tasks"); document.getElementById("new-task-input").focus(); }
 };
+
+window.showAreaDetail = function(areaId) {
+  currentView="areaDetail";
+  currentAreaId=areaId;
+  document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));
+  document.getElementById("view-areaDetail").classList.add("active");
+  const btn=document.getElementById("topbar-action-btn");
+  btn.textContent="+ Nuevo proyecto"; btn.style.display="inline-flex";
+  renderAreaDetail(areaId);
+};
+
+function renderAreaDetail(areaId) {
+  const a=areas[areaId]; if(!a) return;
+  const proj=Object.values(projects).filter(p=>p.areaId===areaId);
+  const allTasks=proj.flatMap(p=>p.tasks||[]);
+  const pending=allTasks.filter(t=>!t.done).length;
+  document.getElementById("topbar-title").textContent=a.name;
+  document.getElementById("area-detail-header").innerHTML=`
+    <div class="area-detail-banner" style="background:${a.color};">
+      <div>
+        <div class="area-detail-banner-name">${a.name}</div>
+        <div class="area-detail-banner-stats">${proj.length} proyecto${proj.length===1?"":"s"} &middot; ${pending} tarea${pending===1?"":"s"} pendiente${pending===1?"":"s"}</div>
+      </div>
+    </div>`;
+  const grid=document.getElementById("area-projects-grid");
+  if(!proj.length){
+    grid.innerHTML="<div class='empty-state' style='grid-column:1/-1;'><p>No hay proyectos en esta área. Creá el primero.</p></div>";
+    return;
+  }
+  grid.innerHTML=proj.map(p=>{
+    const tasks=p.tasks||[],donT=tasks.filter(t=>t.done).length,pct=tasks.length>0?Math.round(donT/tasks.length*100):0;
+    return`<div class="project-card" onclick="showView('projectDetail','${p.id}')" style="border-left-color:${a.color}">
+      <div class="project-card-header"><div class="project-color-dot" style="background:${a.color}"></div>
+        <div><div class="project-card-name">${p.name}</div>
+          ${p.dueDate?`<div style="font-size:11px;color:var(--text-light);">Vence: ${new Date(p.dueDate).toLocaleDateString("es-AR",{day:"2-digit",month:"2-digit",year:"2-digit"})}</div>`:""}</div></div>
+      ${p.desc?`<div class="project-desc">${p.desc}</div>`:""}
+      <div class="project-meta"><span class="badge badge-${p.status}">${p.status}</span><span class="badge badge-${p.priority}">${p.priority}</span></div>
+      <div class="progress-bar"><div class="progress-fill" style="width:${pct}%;background:${a.color}"></div></div>
+      <div class="task-count">${donT}/${tasks.length} tareas completadas</div>
+      ${p.driveLink?`<div style="margin-top:8px;"><a href="${p.driveLink}" target="_blank" class="drive-link-btn" onclick="event.stopPropagation()">🔗 Ver en Drive</a></div>`:""}
+    </div>`;}).join("");
+}
 
 // ── SIDEBAR ──
 function renderSidebar() {
@@ -583,29 +676,20 @@ function renderDashboard() {
   document.getElementById("areas-grid").innerHTML=areaList.length>0
     ?areaList.map(a=>{
       const aProj=proj.filter(p=>p.areaId===a.id);
-      const pending=aProj.flatMap(p=>p.tasks||[]).filter(t=>!t.done).length;
-      return`<div class="area-card" style="border-top-color:${a.color};">
+      const allTasks=aProj.flatMap(p=>p.tasks||[]);
+      const pending=allTasks.filter(t=>!t.done).length;
+      const done=allTasks.filter(t=>t.done).length;
+      const total=allTasks.length;
+      const pct=total>0?Math.round(done/total*100):0;
+      return`<div class="area-card" style="border-top-color:${a.color};cursor:pointer;" onclick="showAreaDetail('${a.id}')">
         <div class="area-card-name" style="color:${a.color};">${a.name}</div>
         <div class="area-card-stat" style="color:${a.color};">${aProj.length}</div>
         <div class="area-card-sub">${aProj.length===1?"proyecto":"proyectos"}</div>
-        <div class="area-card-sub" style="margin-top:4px;">${pending} tarea${pending===1?"":"s"} pendiente${pending===1?"":"s"}</div>
+        <div class="area-card-sub" style="margin-top:4px;">${pending} pendiente${pending===1?"":"s"}</div>
+        <div class="progress-bar" style="margin-top:10px;"><div class="progress-fill" style="width:${pct}%;background:${a.color}"></div></div>
+        <div style="font-size:11px;color:var(--text-light);margin-top:4px;">${pct}% completado</div>
       </div>`;}).join("")
     :"<div class='empty-state' style='grid-column:1/-1;'><p>Creá tu primera área desde el sidebar.</p></div>";
-  document.getElementById("dash-projects-grid").innerHTML=proj.length>0
-    ?proj.map(p=>{
-      const area=areas[p.areaId],color=area?area.color:"#888";
-      const tasks=p.tasks||[],donT=tasks.filter(t=>t.done).length,pct=tasks.length>0?Math.round(donT/tasks.length*100):0;
-      return`<div class="project-card" onclick="showView('projectDetail','${p.id}')" style="border-left-color:${color}">
-        <div class="project-card-header"><div class="project-color-dot" style="background:${color}"></div>
-          <div><div class="project-card-name">${p.name}</div>${area?`<div style="font-size:11px;color:${color};font-weight:700;">${area.name}</div>`:""}</div></div>
-        ${p.desc?`<div class="project-desc">${p.desc}</div>`:""}
-        <div class="project-meta"><span class="badge badge-${p.status}">${p.status}</span><span class="badge badge-${p.priority}">${p.priority}</span></div>
-        <div class="progress-bar"><div class="progress-fill" style="width:${pct}%;background:${color}"></div></div>
-        <div class="task-count">${donT}/${tasks.length} tareas completadas</div></div>`;}).join("")
-    :"<div class='empty-state' style='grid-column:1/-1;'><p>Crea tu primer proyecto.</p></div>";
-  document.getElementById("activity-list").innerHTML=activities.length>0
-    ?activities.slice(0,10).map(a=>`<div class="activity-item"><div class="activity-dot" style="background:${a.color}"></div><span class="activity-text"><strong>${a.user||""}</strong> ${a.text}</span><span class="activity-time">${a.ts?.toDate?fmtDate(a.ts.toDate()):""}</span></div>`).join("")
-    :"<div class='empty-state'><p>Sin actividad aun.</p></div>";
 }
 
 // ── ALL PROJECTS ──
@@ -664,17 +748,31 @@ window.switchTab = function(tab) {
 };
 
 function renderTaskItem(t, showProj) {
-  const od=isOverdue(t.date)&&!t.done;
   const projId=t.projId||currentProjectId;
   const taskNotes=t.notes||[];
+  const statusIcon = t.done ? "&#10003;" : t.inProgress ? "&#9654;" : "";
+  const statusClass = t.done ? " done" : t.inProgress ? " inprogress" : "";
+  const today=new Date(); today.setHours(0,0,0,0);
+  const tomorrow=new Date(today); tomorrow.setDate(tomorrow.getDate()+1);
+  const taskDate=t.date?new Date(t.date):null;
+  let dateClass="", dateBadge="";
+  if(taskDate){
+    taskDate.setHours(0,0,0,0);
+    if(!t.done){
+      if(taskDate<today){dateClass=" overdue";dateBadge=`<span style="font-size:10px;background:#FFE8E8;color:#CC2222;padding:1px 6px;border-radius:10px;font-weight:700;">Vencida</span>`;}
+      else if(taskDate.getTime()===today.getTime()){dateClass=" overdue";dateBadge=`<span style="font-size:10px;background:#FFF3CD;color:#856404;padding:1px 6px;border-radius:10px;font-weight:700;">Hoy</span>`;}
+      else if(taskDate.getTime()===tomorrow.getTime()){dateBadge=`<span style="font-size:10px;background:#E3EAF6;color:#1A3460;padding:1px 6px;border-radius:10px;font-weight:700;">Mañana</span>`;}
+    }
+  }
   return`<div class="task-item${t.done?" completed":""}" id="taskitem-${t.id}">
     <div class="task-item-row">
-      <div class="task-check${t.done?" done":""}" onclick="toggleTask('${t.id}','${projId}')">${t.done?"&#10003;":""}</div>
+      <div class="task-check${statusClass}" onclick="cycleTaskStatus('${t.id}','${projId}')" title="${t.done?'Completada':t.inProgress?'En progreso':'Pendiente'}">${statusIcon}</div>
       <div class="task-prio" style="background:${getPrioColor(t.priority)}"></div>
       <div style="flex:1;cursor:pointer;" onclick="openTaskDetail('${t.id}','${projId}')"><div class="task-title">${t.title}</div>${showProj?`<div style="font-size:11px;color:var(--text-light);">Proyecto: ${t.projName}</div>`:""}</div>
       <div class="task-meta-row">
         ${t.person?`<span class="task-person">${t.person}</span>`:""}
-        <input type="date" class="task-date-input${od?" overdue":""}${!t.date?" empty":""}" value="${t.date||''}" onchange="updateTaskDate('${t.id}','${projId}',this.value)" title="${t.date?'Cambiar fecha':'Agregar fecha'}">
+        ${dateBadge}
+        <input type="date" class="task-date-input${dateClass}${!t.date?" empty":""}" value="${t.date||''}" onchange="updateTaskDate('${t.id}','${projId}',this.value)" title="${t.date?'Cambiar fecha':'Agregar fecha'}">
         <button class="task-notes-btn${taskNotes.length?" has-notes":""}" onclick="openTaskDetail('${t.id}','${projId}')" title="Ver detalles y notas">&#128203;${taskNotes.length?` ${taskNotes.length}`:""}</button>
         <button onclick="deleteTask('${t.id}','${projId}')" style="background:none;border:none;cursor:pointer;color:var(--text-light);font-size:13px;padding:2px 6px;" title="Eliminar">&#10005;</button>
       </div>
@@ -685,9 +783,17 @@ function renderTaskItem(t, showProj) {
 function renderProjectTasks() {
   const p=projects[currentProjectId]; if(!p) return;
   const tasks=p.tasks||[];
-  if(!tasks.length){document.getElementById("project-tasks-list").innerHTML="<div class='empty-state'><p>Sin tareas. Agrega la primera.</p></div>";return;}
-  const pending=tasks.filter(t=>!t.done), done=tasks.filter(t=>t.done);
-  document.getElementById("project-tasks-list").innerHTML=[...pending,...done].map(t=>renderTaskItem(t,false)).join("");
+  if(!tasks.length){document.getElementById("project-tasks-list").innerHTML="<div class='empty-state'><p>Sin tareas. Agrega la primera.</p></div>";}
+  else {
+    const pending=tasks.filter(t=>!t.done), done=tasks.filter(t=>t.done);
+    document.getElementById("project-tasks-list").innerHTML=[...pending,...done].map(t=>renderTaskItem(t,false)).join("");
+  }
+  // Render project activity
+  const projActivities = activities.filter(a => a.text && a.text.includes(p.name));
+  const actEl=document.getElementById("project-activity-list");
+  if(actEl) actEl.innerHTML = projActivities.length>0
+    ? projActivities.slice(0,8).map(a=>`<div class="activity-item"><div class="activity-dot" style="background:${a.color}"></div><span class="activity-text"><strong>${a.user||""}</strong> ${a.text}</span><span class="activity-time">${a.ts?.toDate?fmtDate(a.ts.toDate()):""}</span></div>`).join("")
+    : "<div class='empty-state'><p>Sin actividad registrada.</p></div>";
 }
 
 function renderProjectNotes() {
@@ -714,6 +820,22 @@ function renderProjectFiles() {
     </div>`).join("");
 }
 
+// ── FILTER & SORT TASKS ──
+window.filterTasks = function() {
+  const p=projects[currentProjectId]; if(!p) return;
+  const query=(document.getElementById("task-filter-input")?.value||"").toLowerCase();
+  const sort=document.getElementById("task-sort-select")?.value||"default";
+  let tasks=[...(p.tasks||[])];
+  if(query) tasks=tasks.filter(t=>t.title.toLowerCase().includes(query)||(t.person||"").toLowerCase().includes(query));
+  const prioOrder={alta:0,media:1,baja:2};
+  if(sort==="date") tasks.sort((a,b)=>(a.date||"9")>(b.date||"9")?1:-1);
+  else if(sort==="priority") tasks.sort((a,b)=>(prioOrder[a.priority]||1)-(prioOrder[b.priority]||1));
+  else if(sort==="person") tasks.sort((a,b)=>(a.person||"").localeCompare(b.person||""));
+  else if(sort==="status") tasks.sort((a,b)=>Number(b.done)-Number(a.done)||Number(b.inProgress)-Number(a.inProgress));
+  const pending=tasks.filter(t=>!t.done),done=tasks.filter(t=>t.done);
+  document.getElementById("project-tasks-list").innerHTML=[...pending,...done].map(t=>renderTaskItem(t,false)).join("") || "<div class='empty-state'><p>No se encontraron tareas.</p></div>";
+};
+
 // ── TASKS CRUD ──
 window.addTask = async function() {
   const title=document.getElementById("new-task-input").value.trim(); if(!title) return;
@@ -727,13 +849,22 @@ window.addTask = async function() {
   document.getElementById("new-task-date").value="";
 };
 
-window.toggleTask = async function(taskId, projId) {
+window.cycleTaskStatus = async function(taskId, projId) {
   const p=projects[projId]; if(!p) return;
-  const tasks=(p.tasks||[]).map(t=>t.id===taskId?{...t,done:!t.done}:t);
+  const tasks=(p.tasks||[]).map(t=>{
+    if(t.id!==taskId) return t;
+    if(!t.inProgress&&!t.done) return {...t,inProgress:true,done:false};
+    if(t.inProgress&&!t.done) return {...t,inProgress:false,done:true};
+    return {...t,inProgress:false,done:false};
+  });
   await updateDoc(doc(db,"projects",projId),{tasks});
   const t=tasks.find(t=>t.id===taskId);
   if(t?.done) addActivity(`completo tarea "${t.title}"`,p.color);
   showSaving("Guardado");
+};
+
+window.toggleTask = async function(taskId, projId) {
+  await cycleTaskStatus(taskId, projId);
 };
 
 window.deleteTask = async function(taskId, projId) {
@@ -746,7 +877,11 @@ window.deleteTask = async function(taskId, projId) {
 // ── TASK DATE & TASK NOTES ──
 window.updateTaskDate = async function(taskId, projId, newDate) {
   const p=projects[projId]; if(!p) return;
-  const tasks=(p.tasks||[]).map(t=>t.id===taskId?{...t,date:newDate}:t);
+  const tasks=(p.tasks||[]).map(t=>{
+    if(t.id!==taskId) return t;
+    const hist=[...(t.dateHistory||[]),{date:t.date||null,changedAt:fmtDate(new Date()),changedBy:currentUser.name}].slice(-3);
+    return {...t,date:newDate,dateHistory:hist};
+  });
   await updateDoc(doc(db,"projects",projId),{tasks});
   showSaving("Guardado");
 };
@@ -786,6 +921,7 @@ window.openTaskDetail = function(taskId, projId) {
   document.getElementById("td-prio").innerHTML=`<span style="background:${getPrioColor(t.priority)}18;color:${getPrioColor(t.priority)};padding:2px 10px;border-radius:20px;font-weight:700;">${t.priority}</span>`;
   document.getElementById("td-status").textContent=t.done?"✓ Completada":"Pendiente";
   renderTaskDetailNotes(t);
+  renderDateHistory(t);
   document.getElementById("task-detail-overlay").classList.add("open");
 };
 
@@ -794,18 +930,32 @@ window.closeTaskDetail = function() {
   currentTaskDetail=null;
 };
 
+function renderDateHistory(t) {
+  const hist=t.dateHistory||[];
+  const el=document.getElementById("td-date-history");
+  if(!el) return;
+  el.innerHTML=hist.length>0
+    ?hist.slice().reverse().map(h=>`<span style="font-size:11px;background:var(--surface2);border:1px solid var(--border);padding:2px 8px;border-radius:10px;color:var(--text-muted);">${h.date?new Date(h.date).toLocaleDateString("es-AR",{day:"2-digit",month:"2-digit",year:"2-digit"}):"Sin fecha"} → ${h.changedAt} por ${h.changedBy}</span>`).join("<br style='margin:2px 0;display:block;'>")
+    :"<span style='font-size:12px;color:var(--text-light);'>Sin cambios previos</span>";
+}
+
 function renderTaskDetailNotes(t) {
   const notes=t.notes||[];
   document.getElementById("td-notes-list").innerHTML=notes.length
-    ?notes.map(n=>`<div class="task-note-entry">
-        <div class="task-note-entry-author">${n.author}</div>
-        <div class="task-note-entry-text">${n.text}</div>
-        <div class="task-note-entry-footer">
-          <span class="task-note-entry-date">${n.date}</span>
+    ?notes.map(n=>{
+      const isMe=n.author===currentUser?.name;
+      return`<div class="task-note-entry" style="${isMe?'border-left:3px solid var(--green);':'border-left:3px solid var(--border);'}">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+          <div class="task-note-entry-author" style="display:flex;align-items:center;gap:6px;">
+            <div style="width:22px;height:22px;border-radius:50%;background:${isMe?'var(--green)':'#888'};color:#fff;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;">${n.author.split(" ").map(w=>w[0]).join("").substr(0,2).toUpperCase()}</div>
+            ${n.author}
+          </div>
           <button onclick="deleteTaskNote('${t.id}','${currentTaskDetail?.projId||currentProjectId}','${n.id}')" style="background:none;border:none;cursor:pointer;color:var(--text-light);font-size:11px;">&#10005;</button>
         </div>
-      </div>`).join("")
-    :"<p style='font-size:13px;color:var(--text-light);padding:4px 0;'>Sin notas aún.</p>";
+        <div class="task-note-entry-text">${n.text}</div>
+        <div class="task-note-entry-date" style="margin-top:4px;">${n.date}</div>
+      </div>`;}).join("")
+    :"<p style='font-size:13px;color:var(--text-light);padding:4px 0;'>Sin comentarios aún.</p>";
 }
 
 window.updateTaskDateFromPanel = async function(newDate) {
