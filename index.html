@@ -180,6 +180,36 @@ textarea.input-field { width: 100%; min-height: 75px; resize: vertical; }
 .task-note-text { flex: 1; color: var(--text); line-height: 1.4; }
 .task-note-date { font-size: 11px; color: var(--text-light); white-space: nowrap; flex-shrink: 0; }
 .task-notes-add { display: flex; gap: 6px; margin-top: 8px; }
+/* AREAS */
+.areas-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 14px; margin-bottom: 28px; }
+.area-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; border-top: 4px solid var(--green); transition: box-shadow 0.15s; }
+.area-card:hover { box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+.area-card-name { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 10px; }
+.area-card-stat { font-size: 30px; font-weight: 700; line-height: 1; margin-bottom: 2px; }
+.area-card-sub { font-size: 12px; color: var(--text-muted); }
+/* TASK DETAIL PANEL */
+.task-detail-overlay { position: fixed; inset: 0; z-index: 150; pointer-events: none; }
+.task-detail-overlay.open { pointer-events: all; }
+.task-detail-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,0.3); opacity: 0; transition: opacity 0.2s; }
+.task-detail-overlay.open .task-detail-backdrop { opacity: 1; }
+.task-detail-panel { position: absolute; top: 0; right: -420px; width: 400px; max-width: 95vw; height: 100%; background: var(--surface); border-left: 1px solid var(--border); box-shadow: -4px 0 20px rgba(0,0,0,0.12); display: flex; flex-direction: column; transition: right 0.25s ease; overflow-y: auto; }
+.task-detail-overlay.open .task-detail-panel { right: 0; }
+.task-detail-header { padding: 18px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: flex-start; gap: 12px; }
+.task-detail-title { font-size: 15px; font-weight: 700; color: var(--text); flex: 1; line-height: 1.35; }
+.task-detail-body { padding: 18px 20px; flex: 1; }
+.task-detail-field { margin-bottom: 16px; }
+.task-detail-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-light); margin-bottom: 5px; }
+.task-detail-value { font-size: 13.5px; color: var(--text); }
+.task-notes-section { border-top: 1px solid var(--border); padding-top: 16px; margin-top: 4px; }
+.task-notes-title { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 12px; }
+.task-note-entry { background: var(--surface2); border-radius: var(--radius-sm); padding: 10px 12px; margin-bottom: 8px; }
+.task-note-entry-author { font-size: 11px; font-weight: 700; color: var(--green); margin-bottom: 3px; }
+.task-note-entry-text { font-size: 13px; color: var(--text); line-height: 1.45; }
+.task-note-entry-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 5px; }
+.task-note-entry-date { font-size: 11px; color: var(--text-light); }
+/* DRIVE LINK */
+.drive-link-btn { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; color: #1a73e8; text-decoration: none; padding: 3px 10px; border: 1px solid #c5d8f8; border-radius: 20px; background: #e8f0fe; transition: background 0.15s; }
+.drive-link-btn:hover { background: #d2e3fc; }
 </style>
 </head>
 <body>
@@ -211,11 +241,18 @@ textarea.input-field { width: 100%; min-height: 75px; resize: vertical; }
       <div class="nav-item" onclick="showView('allProjects')" id="nav-allProjects">&#9647; Proyectos <span class="nav-count" id="proj-count">0</span></div>
       <div class="nav-item" onclick="showView('allTasks')" id="nav-allTasks">&#9643; Tareas <span class="nav-count" id="task-count-nav">0</span></div>
     </div>
+  <div class="sidebar-section">
+    <div class="sidebar-label">Áreas</div>
+    <div id="sidebar-areas-list"></div>
+    <button class="btn-new-proj" onclick="openNewAreaModal()">+ Nueva área</button>
+  </div>
+  <div class="sidebar-projects">
     <div class="sidebar-section"><div class="sidebar-label">Proyectos</div></div>
-    <div class="sidebar-projects" id="sidebar-proj-list"></div>
+    <div id="sidebar-proj-list"></div>
     <div style="padding:0 14px 18px;">
       <button class="btn-new-proj" onclick="openNewProjectModal()">+ Nuevo proyecto</button>
     </div>
+  </div>
   </aside>
 
   <div class="main">
@@ -233,20 +270,14 @@ textarea.input-field { width: 100%; min-height: 75px; resize: vertical; }
     <div class="content">
       <!-- DASHBOARD -->
       <div class="view active" id="view-dashboard">
-        <div class="stats-grid" id="stats-grid"></div>
-        <div class="two-col">
-          <div>
-            <div class="section-row">
-              <div class="section-title">Proyectos activos</div>
-              <button class="btn btn-ghost" style="font-size:12px;" onclick="showView('allProjects')">Ver todos</button>
-            </div>
-            <div id="dash-projects-list"></div>
-          </div>
-          <div>
-            <div class="section-title"><span class="sync-dot"></span>Actividad en tiempo real</div>
-            <div class="activity-list" id="activity-list"></div>
-          </div>
+        <div class="areas-grid" id="areas-grid"></div>
+        <div class="section-row" style="margin-bottom:14px;">
+          <div class="section-title">Todos los proyectos</div>
+          <button class="btn btn-ghost" style="font-size:12px;" onclick="showView('allProjects')">Ver todos</button>
         </div>
+        <div class="projects-grid" id="dash-projects-grid" style="margin-bottom:24px;"></div>
+        <div class="section-title" style="margin-bottom:12px;"><span class="sync-dot"></span>Actividad reciente</div>
+        <div class="activity-list" id="activity-list"></div>
       </div>
 
       <!-- ALL PROJECTS -->
@@ -262,7 +293,7 @@ textarea.input-field { width: 100%; min-height: 75px; resize: vertical; }
       <!-- PROJECT DETAIL -->
       <div class="view" id="view-projectDetail">
         <button class="back-btn" onclick="showView('allProjects')">&larr; Volver</button>
-        <div class="project-detail-header">
+        <div class="project-detail-header" id="detail-border" style="border-bottom:3px solid var(--green);">
           <div style="flex:1;">
             <div class="project-detail-title" id="detail-title"></div>
             <div class="project-detail-meta" id="detail-meta"></div>
@@ -271,11 +302,6 @@ textarea.input-field { width: 100%; min-height: 75px; resize: vertical; }
             <button class="btn btn-secondary" onclick="openEditProjectModal()">Editar</button>
             <button class="btn btn-danger" onclick="deleteCurrentProject()">Eliminar</button>
           </div>
-        </div>
-        <div class="tabs" id="detail-tabs">
-          <div class="tab active" onclick="switchTab('tasks')">Tareas</div>
-          <div class="tab" onclick="switchTab('notes')">Notas</div>
-          <div class="tab" onclick="switchTab('files')">Archivos</div>
         </div>
         <div id="tab-tasks">
           <div class="task-list" id="project-tasks-list"></div>
@@ -290,22 +316,6 @@ textarea.input-field { width: 100%; min-height: 75px; resize: vertical; }
             </select>
             <button class="btn btn-primary" onclick="addTask()">Agregar</button>
           </div>
-        </div>
-        <div id="tab-notes" style="display:none;">
-          <div class="add-item-row" style="margin-bottom:14px;">
-            <textarea class="input-field" id="new-note-text" placeholder="Escribi una novedad o nota..." style="flex:1;min-height:58px;resize:vertical;"></textarea>
-            <button class="btn btn-primary" onclick="addNote()" style="align-self:flex-end;">Agregar</button>
-          </div>
-          <div class="notes-grid" id="project-notes-list"></div>
-        </div>
-        <div id="tab-files" style="display:none;">
-          <label class="upload-zone">
-            <input type="file" multiple onchange="handleFileUpload(event)">
-            <div class="upload-zone-icon">&#8679;</div>
-            <strong style="font-size:14px;color:var(--text);">Adjuntar archivos</strong>
-            <p>Hace clic o arrasta archivos aqui</p>
-          </label>
-          <div class="files-list" id="project-files-list"></div>
         </div>
       </div>
     </div>
@@ -323,10 +333,61 @@ textarea.input-field { width: 100%; min-height: 75px; resize: vertical; }
       <div class="form-group"><label class="form-label">Prioridad</label><select class="input-field" id="pm-priority" style="width:100%;"><option value="alta">Alta</option><option value="media">Media</option><option value="baja">Baja</option></select></div>
     </div>
     <div class="form-group"><label class="form-label">Fecha limite</label><input class="input-field" type="date" id="pm-date" style="width:100%;"></div>
-    <div class="form-group"><label class="form-label">Color</label><div class="color-swatches" id="color-swatches"></div></div>
+    <div class="form-group"><label class="form-label">Área</label><select class="input-field" id="pm-area" style="width:100%;"><option value="">Sin área</option></select></div>
+    <div class="form-group"><label class="form-label">Link Drive (opcional)</label><input class="input-field" id="pm-drive" placeholder="https://drive.google.com/..." style="width:100%;"></div>
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="closeModal('proj-modal')">Cancelar</button>
       <button class="btn btn-primary" id="proj-save-btn" onclick="saveProject()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL ÁREA -->
+<div class="modal-overlay" id="area-modal">
+  <div class="modal" style="width:380px;">
+    <div class="modal-title" id="area-modal-title">Nueva área</div>
+    <div class="form-group"><label class="form-label">Nombre *</label><input class="input-field" id="am-name" placeholder="Ej: Trade" style="width:100%;"></div>
+    <div class="form-group"><label class="form-label">Color</label><div class="color-swatches" id="area-color-swatches"></div></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('area-modal')">Cancelar</button>
+      <button class="btn btn-primary" id="area-save-btn" onclick="saveArea()">Crear área</button>
+    </div>
+  </div>
+</div>
+
+<!-- TASK DETAIL PANEL -->
+<div class="task-detail-overlay" id="task-detail-overlay">
+  <div class="task-detail-backdrop" onclick="closeTaskDetail()"></div>
+  <div class="task-detail-panel">
+    <div class="task-detail-header">
+      <div class="task-detail-title" id="td-title"></div>
+      <button onclick="closeTaskDetail()" style="background:none;border:none;cursor:pointer;color:var(--text-light);font-size:18px;padding:2px 6px;flex-shrink:0;">&#10005;</button>
+    </div>
+    <div class="task-detail-body">
+      <div class="task-detail-field">
+        <div class="task-detail-label">Responsable</div>
+        <div class="task-detail-value" id="td-person"></div>
+      </div>
+      <div class="task-detail-field">
+        <div class="task-detail-label">Fecha</div>
+        <input type="date" class="input-field" id="td-date" style="width:auto;font-size:13px;" onchange="updateTaskDateFromPanel(this.value)">
+      </div>
+      <div class="task-detail-field">
+        <div class="task-detail-label">Prioridad</div>
+        <div class="task-detail-value" id="td-prio"></div>
+      </div>
+      <div class="task-detail-field">
+        <div class="task-detail-label">Estado</div>
+        <div class="task-detail-value" id="td-status"></div>
+      </div>
+      <div class="task-notes-section">
+        <div class="task-notes-title">📋 Notas</div>
+        <div id="td-notes-list"></div>
+        <div class="task-notes-add" style="margin-top:10px;">
+          <input class="input-field" id="td-note-input" placeholder="Agregar nota..." style="font-size:13px;" onkeydown="if(event.key==='Enter')addTaskNoteFromPanel()">
+          <button class="btn btn-primary" style="padding:6px 14px;font-size:13px;border-radius:var(--radius-sm);" onclick="addTaskNoteFromPanel()">+</button>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -363,10 +424,15 @@ let selectedColor = COLORS[0];
 let currentView = "dashboard";
 let unsubProjects = null;
 let unsubActivities = null;
+let areas = {};
+let editingAreaId = null;
+let selectedAreaColor = COLORS[0];
+let unsubAreas = null;
+let currentTaskDetail = null;
 
 // ── UTILS ──
 function uid() { return Math.random().toString(36).substr(2,9); }
-function fmtDate(d) { return d.toLocaleDateString("es-AR",{day:"2-digit",month:"2-digit",year:"numeric"}); }
+function fmtDate(d) { return d.toLocaleDateString("es-AR",{day:"2-digit",month:"2-digit",year:"2-digit"}); }
 function isOverdue(ds) { if(!ds) return false; return new Date(ds) < new Date(); }
 function getPrioColor(p) { return p==="alta"?"#CC2222":p==="media"?"#B8860B":"#00C22B"; }
 function getFileIcon(n) {
@@ -440,14 +506,27 @@ function startListeners() {
     snap.forEach(d => activities.push({ id: d.id, ...d.data() }));
     if(currentView==="dashboard") renderDashboard();
   });
+  // Areas
+  unsubAreas = onSnapshot(collection(db,"areas"), snap => {
+    areas = {};
+    snap.forEach(d => { areas[d.id] = { id: d.id, ...d.data() }; });
+    refreshUI();
+  });
 }
 
 function refreshUI() {
   renderSidebar();
+  renderSidebarAreas();
   if(currentView==="dashboard") renderDashboard();
   else if(currentView==="allProjects") renderAllProjects();
   else if(currentView==="allTasks") renderAllTasks();
   else if(currentView==="projectDetail" && currentProjectId) renderProjectDetail(currentProjectId);
+  if(currentTaskDetail) {
+    const {taskId,projId}=currentTaskDetail;
+    const p=projects[projId];
+    const t=p&&(p.tasks||[]).find(t=>t.id===taskId);
+    if(t) renderTaskDetailNotes(t);
+  }
 }
 
 // ── ACTIVITY ──
@@ -499,26 +578,34 @@ function renderSidebar() {
 
 // ── DASHBOARD ──
 function renderDashboard() {
-  const proj = Object.values(projects);
-  const allT = proj.flatMap(p=>p.tasks||[]);
-  const done=allT.filter(t=>t.done).length, pending=allT.filter(t=>!t.done).length;
-  document.getElementById("stats-grid").innerHTML=`
-    <div class="stat-card"><div class="stat-label">Proyectos</div><div class="stat-value">${proj.length}</div><div class="stat-sub">${proj.filter(p=>p.status==="activo").length} activos</div></div>
-    <div class="stat-card"><div class="stat-label">Tareas pendientes</div><div class="stat-value">${pending}</div><div class="stat-sub">${done} completadas</div></div>
-    <div class="stat-card"><div class="stat-label">Prioridad alta</div><div class="stat-value">${proj.filter(p=>p.priority==="alta").length}</div><div class="stat-sub">proyectos criticos</div></div>
-    <div class="stat-card"><div class="stat-label">Novedades</div><div class="stat-value">${proj.reduce((a,p)=>a+(p.notes||[]).length,0)}</div><div class="stat-sub">notas registradas</div></div>`;
-  const actives = proj.filter(p=>p.status==="activo"||p.status==="planificacion");
-  document.getElementById("dash-projects-list").innerHTML = actives.length > 0 ?
-    actives.slice(0,4).map(p=>{const tasks=p.tasks||[],donT=tasks.filter(t=>t.done).length,pct=tasks.length>0?Math.round(donT/tasks.length*100):0;
-      return`<div class="project-card" onclick="showView('projectDetail','${p.id}')" style="margin-bottom:10px;border-left-color:${p.color}">
-        <div class="project-card-header"><div class="project-color-dot" style="background:${p.color}"></div><div class="project-card-name">${p.name}</div></div>
+  const proj=Object.values(projects);
+  const areaList=Object.values(areas);
+  document.getElementById("areas-grid").innerHTML=areaList.length>0
+    ?areaList.map(a=>{
+      const aProj=proj.filter(p=>p.areaId===a.id);
+      const pending=aProj.flatMap(p=>p.tasks||[]).filter(t=>!t.done).length;
+      return`<div class="area-card" style="border-top-color:${a.color};">
+        <div class="area-card-name" style="color:${a.color};">${a.name}</div>
+        <div class="area-card-stat" style="color:${a.color};">${aProj.length}</div>
+        <div class="area-card-sub">${aProj.length===1?"proyecto":"proyectos"}</div>
+        <div class="area-card-sub" style="margin-top:4px;">${pending} tarea${pending===1?"":"s"} pendiente${pending===1?"":"s"}</div>
+      </div>`;}).join("")
+    :"<div class='empty-state' style='grid-column:1/-1;'><p>Creá tu primera área desde el sidebar.</p></div>";
+  document.getElementById("dash-projects-grid").innerHTML=proj.length>0
+    ?proj.map(p=>{
+      const area=areas[p.areaId],color=area?area.color:"#888";
+      const tasks=p.tasks||[],donT=tasks.filter(t=>t.done).length,pct=tasks.length>0?Math.round(donT/tasks.length*100):0;
+      return`<div class="project-card" onclick="showView('projectDetail','${p.id}')" style="border-left-color:${color}">
+        <div class="project-card-header"><div class="project-color-dot" style="background:${color}"></div>
+          <div><div class="project-card-name">${p.name}</div>${area?`<div style="font-size:11px;color:${color};font-weight:700;">${area.name}</div>`:""}</div></div>
+        ${p.desc?`<div class="project-desc">${p.desc}</div>`:""}
         <div class="project-meta"><span class="badge badge-${p.status}">${p.status}</span><span class="badge badge-${p.priority}">${p.priority}</span></div>
-        <div class="progress-bar"><div class="progress-fill" style="width:${pct}%;background:${p.color}"></div></div>
-        <div class="task-count">${donT}/${tasks.length} tareas completadas</div></div>`;}).join("") :
-    "<div class='empty-state'><p>No hay proyectos activos.</p></div>";
-  document.getElementById("activity-list").innerHTML = activities.length > 0 ?
-    activities.slice(0,10).map(a=>`<div class="activity-item"><div class="activity-dot" style="background:${a.color}"></div><span class="activity-text"><strong>${a.user||""}</strong> ${a.text}</span><span class="activity-time">${a.ts?.toDate?fmtDate(a.ts.toDate()):""}</span></div>`).join("") :
-    "<div class='empty-state'><p>Sin actividad aun.</p></div>";
+        <div class="progress-bar"><div class="progress-fill" style="width:${pct}%;background:${color}"></div></div>
+        <div class="task-count">${donT}/${tasks.length} tareas completadas</div></div>`;}).join("")
+    :"<div class='empty-state' style='grid-column:1/-1;'><p>Crea tu primer proyecto.</p></div>";
+  document.getElementById("activity-list").innerHTML=activities.length>0
+    ?activities.slice(0,10).map(a=>`<div class="activity-item"><div class="activity-dot" style="background:${a.color}"></div><span class="activity-text"><strong>${a.user||""}</strong> ${a.text}</span><span class="activity-time">${a.ts?.toDate?fmtDate(a.ts.toDate()):""}</span></div>`).join("")
+    :"<div class='empty-state'><p>Sin actividad aun.</p></div>";
 }
 
 // ── ALL PROJECTS ──
@@ -526,14 +613,18 @@ function renderAllProjects() {
   const grid=document.getElementById("all-projects-grid");
   const proj=Object.values(projects);
   if(!proj.length){grid.innerHTML="<div class='empty-state' style='grid-column:1/-1;'><p>Crea tu primer proyecto.</p></div>";return;}
-  grid.innerHTML=proj.map(p=>{const tasks=p.tasks||[],donT=tasks.filter(t=>t.done).length,pct=tasks.length>0?Math.round(donT/tasks.length*100):0;
-    return`<div class="project-card" onclick="showView('projectDetail','${p.id}')" style="border-left-color:${p.color}">
-      <div class="project-card-header"><div class="project-color-dot" style="background:${p.color}"></div>
-        <div><div class="project-card-name">${p.name}</div>${p.dueDate?`<div style="font-size:11px;color:var(--text-light);">Vence: ${new Date(p.dueDate).toLocaleDateString("es-AR")}</div>`:""}</div></div>
+  grid.innerHTML=proj.map(p=>{
+    const area=areas[p.areaId],color=area?area.color:"#888";
+    const tasks=p.tasks||[],donT=tasks.filter(t=>t.done).length,pct=tasks.length>0?Math.round(donT/tasks.length*100):0;
+    return`<div class="project-card" onclick="showView('projectDetail','${p.id}')" style="border-left-color:${color}">
+      <div class="project-card-header"><div class="project-color-dot" style="background:${color}"></div>
+        <div><div class="project-card-name">${p.name}</div>
+          ${area?`<div style="font-size:11px;color:${color};font-weight:700;">${area.name}</div>`:""}
+          ${p.dueDate?`<div style="font-size:11px;color:var(--text-light);">Vence: ${new Date(p.dueDate).toLocaleDateString("es-AR",{day:"2-digit",month:"2-digit",year:"2-digit"})}</div>`:""}</div></div>
       ${p.desc?`<div class="project-desc">${p.desc}</div>`:""}
       <div class="project-meta"><span class="badge badge-${p.status}">${p.status}</span><span class="badge badge-${p.priority}">${p.priority}</span></div>
-      <div class="progress-bar"><div class="progress-fill" style="width:${pct}%;background:${p.color}"></div></div>
-      <div class="task-count">${donT}/${tasks.length} tareas &middot; ${(p.notes||[]).length} notas &middot; ${(p.files||[]).length} archivos</div></div>`;}).join("");
+      <div class="progress-bar"><div class="progress-fill" style="width:${pct}%;background:${color}"></div></div>
+      <div class="task-count">${donT}/${tasks.length} tareas</div></div>`;}).join("");
 }
 
 // ── ALL TASKS ──
@@ -552,56 +643,40 @@ function renderAllTasks() {
 // ── PROJECT DETAIL ──
 function renderProjectDetail(projId) {
   const p=projects[projId]; if(!p) return;
+  const area=areas[p.areaId],color=area?area.color:"#888";
   document.getElementById("detail-title").textContent=p.name;
   document.getElementById("detail-meta").innerHTML=`
+    ${area?`<span style="font-size:12px;font-weight:700;color:${color};background:${color}18;padding:3px 10px;border-radius:20px;">${area.name}</span>`:""}
     <span class="badge badge-${p.status}">${p.status}</span>
     <span class="badge badge-${p.priority}">${p.priority} prioridad</span>
-    ${p.dueDate?`<span style="font-size:13px;color:var(--text-muted);">Vence: ${new Date(p.dueDate).toLocaleDateString("es-AR",{day:"2-digit",month:"long",year:"numeric"})}</span>`:""}
+    ${p.dueDate?`<span style="font-size:13px;color:var(--text-muted);">Vence: ${new Date(p.dueDate).toLocaleDateString("es-AR",{day:"2-digit",month:"2-digit",year:"2-digit"})}</span>`:""}
+    ${p.driveLink?`<a href="${p.driveLink}" target="_blank" class="drive-link-btn">🔗 Ver en Drive</a>`:""}
     ${p.desc?`<span style="font-size:13px;color:var(--text-muted);display:block;width:100%;margin-top:4px;">${p.desc}</span>`:""}`;
-  switchTab(currentTab);
+  document.getElementById("detail-border").style.borderBottomColor=color;
+  switchTab("tasks");
 }
 
 window.switchTab = function(tab) {
   currentTab=tab;
-  document.querySelectorAll("#detail-tabs .tab").forEach((t,i)=>{const tabs=["tasks","notes","files"];t.classList.toggle("active",tabs[i]===tab);});
-  document.getElementById("tab-tasks").style.display=tab==="tasks"?"block":"none";
-  document.getElementById("tab-notes").style.display=tab==="notes"?"block":"none";
-  document.getElementById("tab-files").style.display=tab==="files"?"block":"none";
+  document.getElementById("tab-tasks").style.display="block";
   if(tab==="tasks") renderProjectTasks();
-  if(tab==="notes") { renderProjectNotes(); }
-  if(tab==="files") renderProjectFiles();
-  if(tab==="tasks"&&currentUser) { const f=document.getElementById("new-task-person"); if(f&&!f.value) f.value=currentUser.name; }
+  if(tab==="tasks"&&currentUser){ const f=document.getElementById("new-task-person"); if(f&&!f.value) f.value=currentUser.name; }
 };
 
 function renderTaskItem(t, showProj) {
   const od=isOverdue(t.date)&&!t.done;
   const projId=t.projId||currentProjectId;
   const taskNotes=t.notes||[];
-  const notesHtml=taskNotes.length
-    ? taskNotes.map(n=>`<div class="task-note-item">
-        <span class="task-note-author">${n.author}</span>
-        <span class="task-note-text">${n.text}</span>
-        <span class="task-note-date">${n.date}</span>
-        <button onclick="deleteTaskNote('${t.id}','${projId}','${n.id}')" style="background:none;border:none;cursor:pointer;color:var(--text-light);font-size:11px;padding:1px 4px;" title="Eliminar nota">&#10005;</button>
-      </div>`).join("")
-    : `<div style="font-size:12px;color:var(--text-light);padding:2px 0;">Sin notas aún.</div>`;
   return`<div class="task-item${t.done?" completed":""}" id="taskitem-${t.id}">
     <div class="task-item-row">
       <div class="task-check${t.done?" done":""}" onclick="toggleTask('${t.id}','${projId}')">${t.done?"&#10003;":""}</div>
       <div class="task-prio" style="background:${getPrioColor(t.priority)}"></div>
-      <div style="flex:1;"><div class="task-title">${t.title}</div>${showProj?`<div style="font-size:11px;color:var(--text-light);">Proyecto: ${t.projName}</div>`:""}</div>
+      <div style="flex:1;cursor:pointer;" onclick="openTaskDetail('${t.id}','${projId}')"><div class="task-title">${t.title}</div>${showProj?`<div style="font-size:11px;color:var(--text-light);">Proyecto: ${t.projName}</div>`:""}</div>
       <div class="task-meta-row">
         ${t.person?`<span class="task-person">${t.person}</span>`:""}
         <input type="date" class="task-date-input${od?" overdue":""}${!t.date?" empty":""}" value="${t.date||''}" onchange="updateTaskDate('${t.id}','${projId}',this.value)" title="${t.date?'Cambiar fecha':'Agregar fecha'}">
-        <button class="task-notes-btn${taskNotes.length?" has-notes":""}" onclick="toggleTaskNotes('${t.id}')" title="Notas de esta tarea">&#128203;${taskNotes.length?` ${taskNotes.length}`:""}</button>
-        <button onclick="deleteTask('${t.id}','${projId}')" style="background:none;border:none;cursor:pointer;color:var(--text-light);font-size:13px;padding:2px 6px;" title="Eliminar tarea">&#10005;</button>
-      </div>
-    </div>
-    <div class="task-notes-panel" id="notes-panel-${t.id}">
-      ${notesHtml}
-      <div class="task-notes-add">
-        <input class="input-field" id="note-input-${t.id}" placeholder="Escribir nota para esta tarea..." style="font-size:12px;padding:5px 10px;" onkeydown="if(event.key==='Enter')addTaskNote('${t.id}','${projId}')">
-        <button class="btn btn-primary" style="padding:5px 14px;font-size:12px;border-radius:var(--radius-sm);" onclick="addTaskNote('${t.id}','${projId}')">Agregar</button>
+        <button class="task-notes-btn${taskNotes.length?" has-notes":""}" onclick="openTaskDetail('${t.id}','${projId}')" title="Ver detalles y notas">&#128203;${taskNotes.length?` ${taskNotes.length}`:""}</button>
+        <button onclick="deleteTask('${t.id}','${projId}')" style="background:none;border:none;cursor:pointer;color:var(--text-light);font-size:13px;padding:2px 6px;" title="Eliminar">&#10005;</button>
       </div>
     </div>
   </div>`;
@@ -700,6 +775,116 @@ window.deleteTaskNote = async function(taskId, projId, noteId) {
   showSaving("Eliminado");
 };
 
+// ── TASK DETAIL PANEL ──
+window.openTaskDetail = function(taskId, projId) {
+  const p=projects[projId]; if(!p) return;
+  const t=(p.tasks||[]).find(t=>t.id===taskId); if(!t) return;
+  currentTaskDetail={taskId,projId};
+  document.getElementById("td-title").textContent=t.title;
+  document.getElementById("td-person").textContent=t.person||"—";
+  document.getElementById("td-date").value=t.date||"";
+  document.getElementById("td-prio").innerHTML=`<span style="background:${getPrioColor(t.priority)}18;color:${getPrioColor(t.priority)};padding:2px 10px;border-radius:20px;font-weight:700;">${t.priority}</span>`;
+  document.getElementById("td-status").textContent=t.done?"✓ Completada":"Pendiente";
+  renderTaskDetailNotes(t);
+  document.getElementById("task-detail-overlay").classList.add("open");
+};
+
+window.closeTaskDetail = function() {
+  document.getElementById("task-detail-overlay").classList.remove("open");
+  currentTaskDetail=null;
+};
+
+function renderTaskDetailNotes(t) {
+  const notes=t.notes||[];
+  document.getElementById("td-notes-list").innerHTML=notes.length
+    ?notes.map(n=>`<div class="task-note-entry">
+        <div class="task-note-entry-author">${n.author}</div>
+        <div class="task-note-entry-text">${n.text}</div>
+        <div class="task-note-entry-footer">
+          <span class="task-note-entry-date">${n.date}</span>
+          <button onclick="deleteTaskNote('${t.id}','${currentTaskDetail?.projId||currentProjectId}','${n.id}')" style="background:none;border:none;cursor:pointer;color:var(--text-light);font-size:11px;">&#10005;</button>
+        </div>
+      </div>`).join("")
+    :"<p style='font-size:13px;color:var(--text-light);padding:4px 0;'>Sin notas aún.</p>";
+}
+
+window.updateTaskDateFromPanel = async function(newDate) {
+  if(!currentTaskDetail) return;
+  await updateTaskDate(currentTaskDetail.taskId,currentTaskDetail.projId,newDate);
+};
+
+window.addTaskNoteFromPanel = async function() {
+  if(!currentTaskDetail) return;
+  const {taskId,projId}=currentTaskDetail;
+  const input=document.getElementById("td-note-input");
+  const text=input?.value.trim(); if(!text) return;
+  const p=projects[projId]; if(!p) return;
+  const note={id:uid(),author:currentUser.name,text,date:fmtDate(new Date())};
+  const taskTitle=(p.tasks||[]).find(t=>t.id===taskId)?.title||"tarea";
+  const tasks=(p.tasks||[]).map(t=>t.id===taskId?{...t,notes:[...(t.notes||[]),note]}:t);
+  await updateDoc(doc(db,"projects",projId),{tasks});
+  addActivity(`agrego nota en "${taskTitle}"`,areas[p.areaId]?.color||"#888");
+  showSaving("Guardado");
+  input.value="";
+};
+
+// ── AREAS CRUD ──
+function renderSidebarAreas() {
+  const areaList=Object.values(areas);
+  document.getElementById("sidebar-areas-list").innerHTML=areaList.map(a=>`
+    <div class="proj-nav-item" style="justify-content:space-between;">
+      <div style="display:flex;align-items:center;gap:9px;">
+        <div class="proj-dot" style="background:${a.color}"></div>
+        <span class="proj-nav-name">${a.name}</span>
+      </div>
+      <button onclick="openEditAreaModal('${a.id}')" style="background:none;border:none;cursor:pointer;color:rgba(255,255,255,0.3);font-size:13px;padding:2px 6px;" title="Editar">✎</button>
+    </div>`).join("");
+}
+
+window.openNewAreaModal = function() {
+  editingAreaId=null; selectedAreaColor=COLORS[0];
+  document.getElementById("area-modal-title").textContent="Nueva área";
+  document.getElementById("area-save-btn").textContent="Crear área";
+  document.getElementById("am-name").value="";
+  renderAreaColorSwatches(COLORS[0]);
+  document.getElementById("area-modal").classList.add("open");
+};
+
+window.openEditAreaModal = function(areaId) {
+  const a=areas[areaId]; if(!a) return;
+  editingAreaId=areaId; selectedAreaColor=a.color;
+  document.getElementById("area-modal-title").textContent="Editar área";
+  document.getElementById("area-save-btn").textContent="Guardar cambios";
+  document.getElementById("am-name").value=a.name;
+  renderAreaColorSwatches(a.color);
+  document.getElementById("area-modal").classList.add("open");
+};
+
+window.renderAreaColorSwatches = function(sel) {
+  document.getElementById("area-color-swatches").innerHTML=COLORS.map(c=>`<div class="color-swatch${c===sel?" selected":""}" style="background:${c}" onclick="selectAreaColor('${c}')"></div>`).join("");
+  selectedAreaColor=sel;
+};
+window.selectAreaColor = function(c){selectedAreaColor=c;renderAreaColorSwatches(c);};
+
+window.saveArea = async function() {
+  const name=document.getElementById("am-name").value.trim(); if(!name){document.getElementById("am-name").focus();return;}
+  if(editingAreaId){
+    await updateDoc(doc(db,"areas",editingAreaId),{name,color:selectedAreaColor});
+    showSaving("Guardado"); closeModal("area-modal"); editingAreaId=null;
+  } else {
+    const ref=doc(collection(db,"areas"));
+    await setDoc(ref,{name,color:selectedAreaColor,createdBy:currentUser.name,createdAt:new Date().toISOString()});
+    showSaving("Área creada"); closeModal("area-modal");
+  }
+};
+
+window.deleteArea = async function(areaId) {
+  const a=areas[areaId]; if(!a) return;
+  if(!confirm(`Eliminar el área "${a.name}"?`)) return;
+  await deleteDoc(doc(db,"areas",areaId));
+  showSaving("Eliminado");
+};
+
 // ── NOTES CRUD ──
 window.addNote = async function() {
   const text=document.getElementById("new-note-text").value.trim(); if(!text) return;
@@ -745,21 +930,26 @@ window.renderColorSwatches = function(sel) {
 };
 window.selectColor = function(c){selectedColor=c;renderColorSwatches(c);};
 
+function populateAreaSelect(selectedId) {
+  const sel=document.getElementById("pm-area");
+  sel.innerHTML='<option value="">Sin área</option>'+Object.values(areas).map(a=>`<option value="${a.id}"${a.id===selectedId?" selected":""}>${a.name}</option>`).join("");
+}
+
 window.openNewProjectModal = function() {
-  editingProjectId=null; selectedColor=COLORS[0];
+  editingProjectId=null;
   document.getElementById("proj-modal-title").textContent="Nuevo proyecto";
   document.getElementById("proj-save-btn").textContent="Crear proyecto";
-  ["pm-name","pm-desc"].forEach(id=>document.getElementById(id).value="");
+  ["pm-name","pm-desc","pm-drive"].forEach(id=>document.getElementById(id).value="");
   document.getElementById("pm-status").value="activo";
   document.getElementById("pm-priority").value="media";
   document.getElementById("pm-date").value="";
-  renderColorSwatches(COLORS[0]);
+  populateAreaSelect();
   document.getElementById("proj-modal").classList.add("open");
 };
 
 window.openEditProjectModal = function() {
   const p=projects[currentProjectId]; if(!p) return;
-  editingProjectId=currentProjectId; selectedColor=p.color;
+  editingProjectId=currentProjectId;
   document.getElementById("proj-modal-title").textContent="Editar proyecto";
   document.getElementById("proj-save-btn").textContent="Guardar cambios";
   document.getElementById("pm-name").value=p.name;
@@ -767,7 +957,8 @@ window.openEditProjectModal = function() {
   document.getElementById("pm-status").value=p.status;
   document.getElementById("pm-priority").value=p.priority;
   document.getElementById("pm-date").value=p.dueDate||"";
-  renderColorSwatches(p.color);
+  document.getElementById("pm-drive").value=p.driveLink||"";
+  populateAreaSelect(p.areaId);
   document.getElementById("proj-modal").classList.add("open");
 };
 
@@ -775,20 +966,18 @@ window.closeModal = function(id){document.getElementById(id).classList.remove("o
 
 window.saveProject = async function() {
   const name=document.getElementById("pm-name").value.trim(); if(!name){document.getElementById("pm-name").focus();return;}
-  const data={name,desc:document.getElementById("pm-desc").value.trim(),status:document.getElementById("pm-status").value,priority:document.getElementById("pm-priority").value,dueDate:document.getElementById("pm-date").value,color:selectedColor};
+  const areaId=document.getElementById("pm-area").value||null;
+  const area=areaId?areas[areaId]:null;
+  const data={name,desc:document.getElementById("pm-desc").value.trim(),status:document.getElementById("pm-status").value,priority:document.getElementById("pm-priority").value,dueDate:document.getElementById("pm-date").value,driveLink:document.getElementById("pm-drive").value.trim(),areaId,color:area?area.color:"#888"};
   if(editingProjectId){
     await updateDoc(doc(db,"projects",editingProjectId),data);
-    addActivity(`actualizo el proyecto "${name}"`,selectedColor);
-    showSaving("Guardado");
-    closeModal("proj-modal");
-    editingProjectId=null;
+    addActivity(`actualizo el proyecto "${name}"`,data.color);
+    showSaving("Guardado"); closeModal("proj-modal"); editingProjectId=null;
   } else {
     const ref=doc(collection(db,"projects"));
-    await setDoc(ref,{...data,tasks:[],notes:[],files:[],createdBy:currentUser.name,createdAt:new Date().toISOString()});
-    addActivity(`creo el proyecto "${name}"`,selectedColor);
-    showSaving("Guardado");
-    closeModal("proj-modal");
-    showView("allProjects");
+    await setDoc(ref,{...data,tasks:[],notes:[],createdBy:currentUser.name,createdAt:new Date().toISOString()});
+    addActivity(`creo el proyecto "${name}"`,data.color);
+    showSaving("Guardado"); closeModal("proj-modal"); showView("allProjects");
   }
 };
 
